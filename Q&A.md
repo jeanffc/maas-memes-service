@@ -9,8 +9,6 @@ For the deployment, I’d prefer a **blue-green** or **canary** strategy. That w
 
 And of course, **Infrastructure-as-Code** (Terraform/CloudFormation) ties everything in a neat bow, so the environment stays consistent and recoverable.
 
----
-
 ## **3.b. How will you model and support SLAs? What should operational SLAs be for this service?**
 
 **Answer:**  
@@ -19,8 +17,6 @@ I’d aim for a **99.9% uptime**—meaning maybe less than one hour of downtime 
 To back these up, I’d use tools like Prometheus or Datadog for monitoring and Grafana for dashboards. Alerts would go to PagerDuty whenever p95 latency, error rates, or uptime dip below those thresholds. If we breach an SLA, we’d run postmortems to figure out what happened and prevent it next time.
 
 I’d also do the occasional chaos engineering or load testing to simulate real-world conditions and ensure the system remains resilient under pressure.
-
----
 
 ## **3.c. How do you support geographically diverse clients? As you scale the system out horizontally, how do you continue to keep track of tokens without slowing down the system?**
 
@@ -31,12 +27,7 @@ Tracking tokens at scale is all about using a **distributed cache**. I’d proba
 
 Meanwhile, I'd keep a close eye on replication lag and network latency. If one region runs hot or experiences issues, the load balancer can fail over or route some traffic to a fallback region. Throw in rate limiting and connection pooling to ensure no single node gets hammered.
 
----
-
-## **Premium Feature: Memes AI**
-
-**Question**  
-_How would you modify the service to track whether a client is authorized for AI-generated memes? Clients with a separate subscription should get AI memes, while non-subscribers get normal memes. How do you scale this without slowing down the system?_
+## **4. Describe how you would modify the service to now keep track of whether a client is authorized to get AI-generated memes. If a client has this subscription, then they should get AI-memes, and they should get normal memes otherwise. How do you keep track of authorization of a client as we cale the system without slowing down performance?**
 
 **Answer:**  
 To handle **Memes AI**, I'd store a simple boolean (`is_premium`) or subscription tier in our `token_balances` table (or a new `subscriptions` table, depending on design). Whenever a user upgrades, we flip `is_premium` to `true`.
