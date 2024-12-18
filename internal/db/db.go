@@ -2,29 +2,29 @@ package db
 
 import (
     "database/sql"
+    "fmt"
     "time"
 
     _ "github.com/mattn/go-sqlite3"
 )
 
 const (
-    dbPath          = "./maas.db"
     maxOpenConns    = 25
     maxIdleConns    = 25
     connMaxLifetime = 5 * time.Minute
 )
 
-func InitDB() (*sql.DB, error) {
+func InitDB(dbPath string) (*sql.DB, error) {
     db, err := sql.Open("sqlite3", dbPath)
     if err != nil {
-        return nil, err
+        return nil, fmt.Errorf("failed to open database: %w", err)
     }
 
     db.SetMaxOpenConns(maxOpenConns)
     db.SetMaxIdleConns(maxIdleConns)
     db.SetConnMaxLifetime(connMaxLifetime)
 
-    createTablesSQL := `
+    schema := `
     CREATE TABLE IF NOT EXISTS token_balances (
         client_id TEXT PRIMARY KEY,
         balance INTEGER DEFAULT 0,
@@ -40,10 +40,11 @@ func InitDB() (*sql.DB, error) {
         longitude REAL,
         created_at DATETIME DEFAULT CURRENT_TIMESTAMP
     );
-    CREATE INDEX IF NOT EXISTS idx_token_balances_client_id ON token_balances(client_id);
-    CREATE INDEX IF NOT EXISTS idx_memes_query ON memes(query);
     `
+    _, err = db.Exec(schema)
+    if err != nil {
+        return nil, fmt.Errorf("failed to create schema: %w", err)
+    }
 
-    _, err = db.Exec(createTablesSQL)
-    return db, err
+    return db, nil
 }

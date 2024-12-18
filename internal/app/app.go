@@ -3,7 +3,6 @@ package app
 import (
     "log"
     "os"
-
     "database/sql"
     "github.com/gorilla/mux"
     "golang.org/x/time/rate"
@@ -11,8 +10,9 @@ import (
 )
 
 const (
-    rateLimit = 100
-    rateBurst = 200
+    dbPath         = "./maas.db"
+    rateLimit      = 100
+    rateBurst      = 200
 )
 
 type App struct {
@@ -24,14 +24,13 @@ type App struct {
 
 func NewApp() (*App, error) {
     logger := log.New(os.Stdout, "[MaaS] ", log.LstdFlags|log.Lshortfile)
-
-    database, err := db.InitDB()
+    database, err := db.InitDB(dbPath) 
     if err != nil {
         return nil, err
     }
 
-    router := mux.NewRouter()
     limiter := rate.NewLimiter(rate.Limit(rateLimit), rateBurst)
+    router := mux.NewRouter()
 
     return &App{
         DB:      database,
