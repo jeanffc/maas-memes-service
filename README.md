@@ -27,7 +27,7 @@ go mod download
 Start the service:
 
 ```bash
-go run main.go
+go run cmd/server/main.go
 ```
 
 ## API Endpoints
