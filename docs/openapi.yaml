@@ -1,0 +1,221 @@
+openapi: 3.0.3
+info:
+  title: Memes-as-a-Service (MaaS)
+  description: >
+    A high-performance microservice for delivering memes on demand.
+    Features token-based billing, rate limiting, and SQLite persistence.
+  version: 1.0.0
+
+servers:
+  - url: http://localhost:8080
+    description: Local Development Server
+
+tags:
+  - name: Memes
+    description: Endpoints related to meme retrieval
+  - name: Billing
+    description: Endpoints for token balance and purchasing tokens
+
+paths:
+  /memes:
+    get:
+      tags:
+        - Memes
+      summary: Fetch a Meme
+      description: Fetch a meme based on location and a query string, deducting one token from the client's balance.
+      operationId: getMeme
+      parameters:
+        - name: lat
+          in: query
+          description: Latitude for the meme context
+          required: true
+          schema:
+            type: number
+            format: float
+        - name: lon
+          in: query
+          description: Longitude for the meme context
+          required: true
+          schema:
+            type: number
+            format: float
+        - name: query
+          in: query
+          description: Keyword or topic for the meme
+          required: false
+          schema:
+            type: string
+        - name: X-Client-ID
+          in: header
+          description: Unique Client ID for token billing
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Successful Meme Response
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Meme"
+        "400":
+          description: Invalid parameters (e.g., bad latitude/longitude)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "401":
+          description: Missing or invalid Client ID
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "402":
+          description: Insufficient tokens
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "429":
+          description: Rate limit exceeded
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "500":
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+
+  /balance:
+    get:
+      tags:
+        - Billing
+      summary: Check Token Balance
+      description: Returns the current token balance for the provided client.
+      operationId: getTokenBalance
+      parameters:
+        - name: X-Client-ID
+          in: header
+          description: Unique Client ID
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Successful Token Balance Response
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TokenBalance"
+        "401":
+          description: Missing or invalid Client ID
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "429":
+          description: Rate limit exceeded
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "500":
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+
+  /tokens:
+    post:
+      tags:
+        - Billing
+      summary: Add Tokens
+      description: Adds or increments token balance for the given client.
+      operationId: addTokens
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/TokenBalance"
+      responses:
+        "200":
+          description: Tokens successfully added
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: success
+        "400":
+          description: Invalid request body or parameters
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "429":
+          description: Rate limit exceeded
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "500":
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+
+components:
+  schemas:
+    Meme:
+      type: object
+      properties:
+        id:
+          type: string
+          example: "1692215837632036000"
+        url:
+          type: string
+          format: uri
+          example: "https://example.com/meme.jpg"
+        caption:
+          type: string
+          example: "A meme about food"
+        query:
+          type: string
+          example: "food"
+        latitude:
+          type: number
+          format: float
+          example: 40.73061
+        longitude:
+          type: number
+          format: float
+          example: -73.935242
+        created_at:
+          type: string
+          format: date-time
+          example: "2024-12-17T12:00:00Z"
+
+    TokenBalance:
+      type: object
+      properties:
+        client_id:
+          type: string
+          example: "client123"
+        balance:
+          type: integer
+          example: 100
+
+    Error:
+      type: object
+      properties:
+        error:
+          type: string
+          example: "invalid request parameters"
